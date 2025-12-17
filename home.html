@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전자상가 | 공간사전</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="icon" href="data/Asset 4.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #17171c;
+            font-family: 'Helvetica', 'Noto Sans KR', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            user-select: none;
+            cursor: none;
+        }
+
+        .custom-cursor {
+            position: fixed;
+            top: 0;      
+            left: 0;
+            width: 20px;
+            height: 20px;
+            background-color: #dddddd; 
+            border-radius: 0%;
+            pointer-events: none; 
+            z-index: 99999;
+            mix-blend-mode: difference;
+            transform: translate(-50%, -50%); 
+            transition: width 0.2s, height 0.2s; 
+            will-change: transform;
+        }
+
+        #scene {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            perspective: 2000px;
+            transform-style: preserve-3d;
+            pointer-events: none; 
+        }
+
+        #gallery-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-style: preserve-3d;
+            transform: rotateX(60deg) rotateZ(-45deg);
+            will-change: transform;
+            pointer-events: auto;
+        }
+
+        .card {
+            position: absolute;
+            width: 300px;  
+            height: 280px;
+            top: -140px; 
+            left: -150px; 
+            background-color: transparent; 
+            transform-style: preserve-3d;
+            pointer-events: none; 
+            
+            /* 위치 이동 트랜지션 (슬라이더 조절 시 부드럽게 이동) */
+            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            will-change: transform, z-index;
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: transparent;
+            border: none;
+            transform: rotateX(-90deg) rotateY(-90deg);
+            transform-origin: center bottom;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: auto; /* 실제 이미지만 마우스 반응 */
+            cursor: none; 
+            will-change: transform;
+            border: 1px solid black;
+        }
+
+        .card-img {
+            width: 100%;
+            height: 85%;
+            object-fit: cover;
+            background-color: #ddd;
+            box-shadow: 
+                5px 5px 15px rgba(0,0,0,0.1), 
+                -1px -1px 0px rgba(255,255,255,0.1) inset;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        .card-info {
+            height: 15%;
+            padding: 5px 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #1c1c1c;
+            font-weight: 900;
+            border-top: 1px solid black;
+        }
+
+        .card:hover {
+            z-index: 9999 !important;
+        }
+        
+        .card-inner:hover {
+            transform: rotateX(-90deg) rotateY(-90deg)
+            translateX(100px) translateZ(50px) scale(1.1);
+        }
+
+        .ui-layer {
+            position: fixed;
+            top: 40px;
+            left: 40px;
+            z-index: 1000;
+            pointer-events: none; 
+        }
+        
+        .title-box {
+            position: relative;
+            display: inline-block;
+            pointer-events: auto;
+            cursor: none;
+            margin-bottom: 20px; 
+}
+
+        .title-box img {
+            width: 150px;
+            height: auto;
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.3));
+            display: block;
+        }
+
+        .logo-tooltip {
+            position: absolute;
+            top: 100px;
+            left: 0;
+            width: 400px; 
+            max-height: 60vh; 
+            overflow-y: auto;
+            background-color: #f5ea00;
+            color: #000000;
+            border: 2px solid #17171c;
+            padding: 20px;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            line-height: 1.9;
+            white-space: normal; 
+            word-break: keep-all;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: opacity 0.5s ease, visibility 0.5s ease, transform 0.5s ease;
+            z-index: 2000;
+            pointer-events: auto;
+        }
+
+        .logo-tooltip::-webkit-scrollbar {
+            width: 10px;
+        }
+        .logo-tooltip::-webkit-scrollbar-thumb {
+            background-color: #17171c;
+            border: 0.5px solid #dddddd;
+        }
+        .logo-tooltip::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+
+    .title-box:hover + .logo-tooltip,
+    .logo-tooltip:hover { 
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+}
+
+        .title-box:hover .logo-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .title-box ul{
+            margin-top: 30px;
+            font-family: "Noto Sans KR", sans-serif;
+            font-size: 1.2rem;
+            letter-spacing: 5px;
+            font-weight: 600;
+            color: #dddddd;
+            line-height: 150%;
+            text-align: center;
+        }
+
+        .title-box li{
+            line-height: 200%;
+        }
+
+        #loading {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-family: "Noto Sans KR", sans-serif;
+            font-weight: 500;
+            font-size: 0.7rem;
+            color: #dddddd;
+            text-align: right;
+            line-height: 1.4;
+        }
+
+        .slider-container {
+            position: fixed;
+            bottom: 20px;
+            left: 40px;
+            z-index: 2000;
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            color: #dddddd;
+            font-family: "Noto Sans KR", sans-serif;
+        }
+
+        .slider-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 20px;
+            background: #17171c;
+            border: 3px solid #dddddd;
+            outline: none;
+            cursor: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 0%;
+            background: #f5ea00;
+            cursor: none;
+            transition: transform 0.2s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        /* 모달 스타일 */
+        #image-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.4); 
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none; 
+            visibility: hidden;
+            transition: background 0.5s ease, visibility 0s 0.3s; 
+        }
+
+        #image-modal.active {
+            background: #17171c; 
+            visibility: visible;
+            pointer-events: auto;
+            cursor: none;
+            transition: background 2s ease, visibility 0.3s;
+        }
+
+        .modal-content-wrapper {
+            position: absolute; 
+            transform-origin: center center;
+            transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+            will-change: top, left, width, height, transform;
+            overflow: visible; 
+            background: transparent;
+            display: flex;
+            align-items: center; 
+            justify-content: center;
+        }
+
+        .modal-content-wrapper.expanded {
+            top: 50% !important;
+            left: 50% !important;
+            width: auto !important; 
+            height: auto !important; 
+            max-width: 95vw !important; 
+            max-height: 85vh !important;
+            transform: translate(-50%, -50%) !important;
+            box-shadow: none;
+            border: none;
+            z-index: 10001;
+            display: flex;
+            gap: 100px; 
+        }
+
+        .modal-main-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            border: 1px solid rgba(0,0,0,0.5);
+            background: #fff;
+            transition: all 1s;
+        }
+        
+        .modal-content-wrapper.expanded .modal-main-img {
+            width: auto;
+            height: auto;
+            max-width: 80%;
+            max-height: 80vh;
+            border: 1px solid #000;
+        }
+
+        #animating-card{
+            width: 100%;
+            height: auto;
+            column-gap: 200px;
+        }
+
+        .side-img-container {
+            width: auto;
+            overflow: hidden;
+            height: auto;
+            flex-shrink: 0; 
+        }
+
+        .modal-side-img {
+            width: 500px;
+            height: 500px;
+            object-fit: contain;
+            display: block;
+            transform: translateX(100%);
+            transition: 2s;
+        }
+
+        .modal-content-wrapper.expanded .side-img-container {
+            width: 500px; 
+        }
+        
+        .modal-content-wrapper.expanded .modal-side-img {
+            transform: translateX(0); 
+        }
+
+        .bottom-caption {
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            text-align: center;
+            color: #17171c;
+            background: #dddddd;
+            padding: 10px 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: all 1s ease 0.3s;
+            z-index: 10002;
+            pointer-events: none;
+        }
+
+        #image-modal.active .bottom-caption {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .caption-id {
+            display: block;
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+        .caption-title {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #000;
+            line-height: 1;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 커스텀 커서 -->
+    <div class="custom-cursor"></div>
+
+    <div class="ui-layer">
+    <!-- 1. 로고 박스 -->
+    <div class="title-box">
+        <img src="data/logo.svg" alt="Yongsan Archive Logo">
+    </div>
+    
+    <!-- 2. 글상자 (title-box의 형제 요소로 배치) -->
+    <div class="logo-tooltip">
+        온라인 전자상거래가 소비의 표준으로 자리 잡은 오늘날, 오프라인 공간은 어떤 의미로 재정의되고 있는가? 1990년대 대한민국 전자제품의 메카로 군림했던 용산전자상가는 이러한 시대적 변화의 최전선에서 부침을 겪었다. 온라인 시장의 급격한 팽창과 함께 과거의 영광은 퇴색되었고, 화려했던 쇼룸들은 이제 컴퓨터 부품들이 적재된 거대한 물류 창고처럼 변모해버린 듯하다. 그러나 용산은 멈춰버린 유적이 아니다. 이곳은 여전히 거친 숨을 내쉬며 작동하고 있는 살아있는 현장으로, 다가오는 새로운 변화에 맞서 묵묵히 준비하고 있는 공간이다.
+        <br><br>
+        우리는 이 변화의 틈새에서 용산전자상가에 새겨진 기계와 기술의 흔적을 탐구하고자 한다. 최신 사양의 새 상품과 누군가의 손때가 묻은 중고품, 그리고 기억 속에서 잊혀졌던 반가운 기계들이 뒤섞여 있는 이곳은 기술의 생애주기가 한 공간에 공존하는 독특한 장소다. 상가와 사람, 그리고 기술의 파편들이 얽혀 만들어내는 용산전자상가만의 풍경. 우리는 이런 혼재된 풍경 속에 기계와 기술이 어떻게 공간을 시각적으로 점유하고 구현해내고 있는지, 그 흔적을 추적하고 기록하려는 시도이다.
+        <br><br>
+        우리는 용산전자상가에서 찾은 이미지들을 세 가지 키워드로 분류했다. 첫번째는 시간이 지남에 따라 쌓이거나 모여있는 상태를 보여주는 이미지를 '누적', 규칙이 없는 상태의 이미지는 '무질서', 재기능을 하기 위한 대기 상태를 나타내는 이미지를 '기회'로 정의했다.
+        <br><br>
+        이미지에서 도출된 그래픽 모티브들은 조형, 의미, 원리, 서사라는 네 가지 핵심 요소를 기반으로 제작되었다. 각 키워드의 조형적 특징을 시각화하기 위해 '누적'은 면과 선으로, '무질서'는 선을 사용했으며, '기회'는 면과 점을 주 조형 요소로 활용하여 제작했다.
+        <br><br>
+        본 웹사이트에서는 각 키워드를 색으로 분류했으며, 누적은 파란색, 무질서는 초록색, 기회는 마젠타색으로 표기했다. 각 이미지 카드를 클릭하면 이미지에서 추출하여 제작한 그래픽 모티브가 등장하며, 화면 하단에는 각 이미지에 대한 인덱스를 표기했다.
+    </div>
+</div>
+
+    <!-- [추가] 간격 조절 슬라이더 -->
+    <div class="slider-container">
+
+        <!-- 누적 간격 조절 여기 쓸까 말까? -->
+        <div class="slider-label"></div> 
+        <!-- 기본값 80, 10~300 범위 -->
+        <input type="range" id="gap-slider" min="3" max="500" value="80">
+    </div>
+
+    <div id="loading">
+        계원예술대학교 이미지메이킹 2학기<br>권호준, 김유빈, 서가현, 임세은
+    </div>
+
+    <!-- 3D 갤러리 -->
+    <div id="scene">
+        <div id="gallery-track"></div>
+    </div>
+
+    <!-- 모달 컨테이너 -->
+    <div id="image-modal">
+        <div id="animating-card" class="modal-content-wrapper">
+            <img src="" id="modal-image" class="modal-main-img">
+            <div class="side-img-container">
+                <img src="" id="modal-side-image" class="modal-side-img">
+            </div>
+        </div>
+
+        <div class="bottom-caption" id="modal-caption">
+            <span class="caption-id" id="caption-id">NO. 01</span>
+            <span class="caption-title" id="caption-title">Main Hall</span>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 0. 전역 변수 선언
+        // ==========================================
+        let currentScroll = 0;
+        let targetScroll = -200; 
+        let isDragging = false;
+        let startCoord = 0;
+        let startScroll = 0;
+        
+        let cardElements = []; 
+
+        // [수정] cardGap을 let으로 변경하여 가변적으로 사용
+        let cardGap = 80;      
+        const spreadGap = 150;  
+
+        // ==========================================
+        // 1. 마우스 커서 및 슬라이더
+        // ==========================================
+        const cursor = document.querySelector('.custom-cursor');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0) translate(-50%, -50%)`;
+        });
+
+        // [추가] 슬라이더 이벤트 리스너
+        const gapSlider = document.getElementById('gap-slider');
+        gapSlider.addEventListener('input', (e) => {
+            cardGap = parseInt(e.target.value); // 슬라이더 값으로 간격 업데이트
+            updateLayout(-1); // 즉시 레이아웃 갱신
+        });
+
+        // ==========================================
+        // 2. 데이터 및 색상
+        // ==========================================
+        const infoBackgrounds = {
+            type1: "#1b9bd7", 
+            type2: "#62b346",
+            type3: "#e80e70" 
+        };
+
+        const rawImageData = [
+            { 
+                id: 1, 
+                title: "우편함_원효상가 4동 1층 출입문 앞", 
+                colorType: "type1", 
+                url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547602/picture_1_hpqaxi.jpg",
+                sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566707/Asset_1_cs7dfn.svg" 
+            },
+            { 
+                id: 2, 
+                title: "카라비너들_원효상가 부광볼트", 
+                colorType: "type2", 
+                url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547601/picture_2_h4juq3.jpg",
+                sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566708/Asset_2_kzxn9t.svg" 
+            },
+            { 
+                id: 3, 
+                title: "삼각대와 카메라_105호", 
+                colorType: "type3", 
+                url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547613/picture_3_lmsmt3.jpg",
+                sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566708/Asset_3_wobujp.svg"
+            },
+            { id: 4, title: "청소기들_GARMIN 매장", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547601/picture_4_y9bknm.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566708/Asset_4_tpzc3m.svg" },
+            { id: 5, title: "에스컬레이터 패턴_GARMIN 매장 앞", colorType: "type2", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547601/picture_5_hhxr6d.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566709/Asset_5_uspfj4.svg" },
+            { id: 6, title: "면도기들_115호 아랑전자", colorType: "type3", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547601/picture_6_tyxexx.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566709/Asset_6_e0pvpg.svg" },
+            { id: 7, title: "전시 TV_125호 대륙전자", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547605/picture_7_padvpk.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566710/Asset_7_wsrl2e.svg" },
+            { id: 8, title: "누적 상자(1)_103호 앞", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547605/picture_8_qcsede.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566711/Asset_8_yyigua.svg" },
+            { id: 9, title: "카메라 진열대_113호 디지털프라자", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547603/picture_9_a5li7m.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566712/Asset_9_wnxwpy.svg" },
+            { id: 10, title: "누적 상자 (2)_110호 명성카메라", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547624/picture_10_eaiuww.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566712/Asset_10_mamb3t.svg" },
+            { id: 11, title: "컴퓨터 부품들_전자랜드 PC 부품 라인", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547624/picture_11_nbdhbj.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566713/Asset_11_oj7kcu.svg" },
+            { id: 12, title: "컴퓨터 케이스_전자랜드 PC 부품 라인", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547605/picture_12_stzt4w.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566714/Asset_12_jeczgw.svg" },
+            { id: 13, title: "워치스트랩 진열대_전자랜드 워치스트랩 진열대", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547608/picture_13_zhtzlc.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566715/Asset_13_dcbjxy.svg" },
+            { id: 14, title: "세탁기_전자랜드 삼성", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547607/picture_14_n0bwol.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566716/Asset_14_wmzhq1.svg" },
+            { id: 15, title: "누적 상자(3)_274호 주닉스", colorType: "type2", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547609/picture_15_m4io2k.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566717/Asset_15_yex9wc.svg" },
+            { id: 16, title: "삼각대들_274호 주닉스", colorType: "type3", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547610/picture_16_q4ewzg.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566718/Asset_16_gecnbs.svg" },
+            { id: 17, title: "누적 상자(4)_274호 주닉스 앞", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547612/picture_17_q5qhce.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566718/Asset_17_hot9d7.svg" },
+            { id: 18, title: "오디오 믹서_254호 (주)동아전자", colorType: "type3", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547613/picture_18_paxm7n.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566719/Asset_18_uga84t.svg" },
+            { id: 19, title: "오디오 앰프들_254호 (주)동아전자 뒤", colorType: "type3", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547612/picture_19_a8m0kp.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566721/Asset_19_yb8uy1.svg" },
+            { id: 20, title: "라디오와 오디오_251호 신성전자", colorType: "type3", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547615/picture_20_gk0xu5.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566722/Asset_20_byxqlr.svg" },
+            { id: 21, title: "카메라 렌즈들_250호 부원전자", colorType: "type2", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547621/picture_21_mtlhfr.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566723/Asset_21_ch1zjo.svg" },
+            { id: 22, title: "브라운관 TV_250호 부원전자", colorType: "type3", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547616/picture_22_zqhcc5.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566724/Asset_22_anhmdf.svg" },
+            { id: 23, title: "카메라 필터들_248호 스마트원우", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547617/picture_23_qqbypo.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566724/Asset_23_kruivd.svg" },
+            { id: 24, title: "캠코더_248호 스마트원우", colorType: "type3", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547618/picture_24_cvrdhi.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566725/Asset_24_yhjipq.svg" },
+            { id: 25, title: "음향 전선들_227호 반월음향", colorType: "type3", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547620/picture_25_hzlnc5.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566727/Asset_25_kikjyb.svg" },
+            { id: 26, title: "철제 다리_354호 랜드가구", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547621/picture_26_s9o9h5.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566728/Asset_26_fwz4gp.svg" },
+            { id: 27, title: "스티로폼 누적_305호 현주아이앤씨", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547623/picture_27_gvgfo2.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566730/Asset_27_o7vzca.svg" },
+            { id: 28, title: "그래픽카드 박스 누적_305호 현주아이앤씨", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547623/picture_28_k16fo5.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566732/Asset_28_mwrq44.svg" },
+            { id: 29, title: "ABKO 박스 누적_330호 선호컴퓨터 뒤편", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547625/picture_29_vyuenh.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566733/Asset_29_udvncc.svg" },
+            { id: 30, title: "공실(협진컴퓨터)_336호 협진컴퓨터", colorType: "type3", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547625/picture_30_p6isxl.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566734/Asset_30_ivuixw.svg" },
+            { id: 31, title: "에어캡들_306-1호 네오컴퓨터", colorType: "type3", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547626/picture_31_kchnxf.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566735/Asset_31_n0rhii.svg" },
+            { id: 32, title: "노트북들_359호 대일트레이딩", colorType: "type2", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547627/picture_32_v6soqu.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566738/Asset_32_fpo5rc.svg" },
+            { id: 33, title: "드라이버 및 도구들_359호 대일트레이딩", colorType: "type3", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547628/picture_33_xsd9ns.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566739/Asset_33_xfvcdx.svg" },
+            { id: 34, title: "모니터 박스들_337호 윈트컴", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547629/picture_34_lijbwe.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566740/Asset_34_otio1g.svg" },
+            { id: 35, title: "그래픽카드 박스 누적_301호 한국터보컴퓨터", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547639/picture_35_fq1zer.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566740/Asset_35_qottvn.svg" },
+            { id: 36, title: "랜선들_320호 앞 공실", colorType: "type2", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547628/picture_36_vili78.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566741/Asset_36_b3zyny.svg" },
+            { id: 37, title: "스프링쿨러_본관 3층 엘리베이터 앞 천장", colorType: "type3", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547631/picture_37_sxaja4.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566746/Asset_37_ow1nlz.svg" },
+            { id: 38, title: "계량기_신관 3층 에스컬레이터 앞", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547630/picture_38_gb54bs.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566747/Asset_38_sk2h2q.svg" },
+            { id: 39, title: "닌텐도 칩 누적_게임 갤러리아 A49 드림통신", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547630/picture_39_cfjeal.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566747/Asset_39_k9xukj.svg" },
+            { id: 40, title: "누적 상자 빨간색 패턴_신관 5층 에스컬레이터 옆", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547919/picture_40_cyxnln.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566748/Asset_40_lh72dp.svg" },
+            { id: 41, title: "메인보드_2층 102호", colorType: "type2", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547632/picture_41_gkz1cs.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566751/Asset_41_nznswi.svg" },
+            { id: 42, title: "화살표 상자_3층 171호 옆", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547652/picture_42_bbfrws.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566753/Asset_42_kpj18r.svg" },
+            { id: 43, title: "컴퓨터 케이스_3층 125호 C&A 시스템 앞", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547634/picture_43_af6hl1.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566753/Asset_43_xdrz7g.svg" },
+            { id: 44, title: "파워 전선(1)_3층 125호 C&A 시스템", colorType: "type2", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547635/picture_44_ikydlr.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566754/Asset_44_z0l8yi.svg" },
+            { id: 45, title: "파워 전선(2)_3층 125호 C&A 시스템", colorType: "type2", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547637/picture_45_jm5ufz.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566756/Asset_45_hxljxl.svg" },
+            { id: 46, title: "메인보드 누적 상자_3층 152호 H컴", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547635/picture_46_ohofvo.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566760/Asset_46_vr45ja.svg" },
+            { id: 47, title: "랜포트_3층 4호 (주)랜포스", colorType: "type3", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547648/picture_47_yrtsjt.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566760/Asset_47_tyvfs6.svg" },
+            { id: 48, title: "적층 박스_3층 31호 (주)근호컴", colorType: "type2", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547638/picture_48_ykn3p6.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566761/Asset_48_ypx6hc.svg" },
+            { id: 49, title: "본체 케이스_4층 96호", colorType: "type3", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547638/picture_49_omk9qy.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566761/Asset_49_ylhugy.svg" },
+            { id: 50, title: "누적된 박스의 파란색 패턴_4층 96호 앞", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547643/picture_50_baxhsx.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566765/Asset_50_wsyiqj.svg" },
+            { id: 51, title: "파워와 전선_4층 141호 컴퓨터 1번지", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547641/picture_51_kypull.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566766/Asset_51_r7dwyb.svg" },
+            { id: 52, title: "컴퓨터 케이스 누적_4층 141호 컴퓨터 1번지", colorType: "type1", url: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765547642/picture_52_cd9orx.jpg", sideUrl: "https://res.cloudinary.com/dcyuf1hqs/image/upload/v1765566767/Asset_52_sawcuz.svg" },
+        ];
+
+        function optimizeCloudinaryUrl(url) {
+            if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
+                if (!url.includes('/upload/w_')) {
+                    return url.replace('/upload/', '/upload/w_500,q_auto,f_auto/');
+                }
+            }
+            return url;
+        }
+
+        function getHighResUrl(url) {
+            if (url.includes('res.cloudinary.com') && url.includes('/upload/')) {
+                if (url.includes('w_500,q_auto,f_auto')) {
+                    return url.replace('w_500,q_auto,f_auto', 'w_1600,q_auto,f_auto');
+                }
+                return url.replace('/upload/', '/upload/w_1600,q_auto,f_auto/');
+            }
+            return url;
+        }
+
+        const imageData = rawImageData.map(item => ({
+            ...item,
+            thumbUrl: optimizeCloudinaryUrl(item.url), 
+            originalUrl: item.url,
+            sideUrl: item.sideUrl || `https://picsum.photos/500/500?random=${item.id+100}`
+        }));
+
+
+        // ==========================================
+        // 2. 갤러리 생성 로직
+        // ==========================================
+        
+        const track = document.getElementById('gallery-track');
+        
+        function initGallery() {
+            track.innerHTML = ''; 
+            cardElements = [];
+
+            // 모든 카드를 생성
+            imageData.forEach((data, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                // Stack 순서 (앞이 위로)
+                card.style.zIndex = imageData.length - index; 
+                card.dataset.index = index;
+
+                const colorType = data.colorType || "type1";
+                const bgColor = infoBackgrounds[colorType];
+
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <img src="${data.thumbUrl}" class="card-img" alt="${data.title}" loading="lazy">
+                        <div class="card-info" style="background-color: ${bgColor};">
+                            <span>${data.id < 10 ? '0'+data.id : data.id}</span>
+                            <span>${data.title}</span>
+                        </div>
+                    </div>
+                `;
+
+                // 마우스 호버 이벤트
+                const cardInner = card.querySelector('.card-inner');
+
+                cardInner.addEventListener('mouseenter', () => {
+                    updateLayout(index);
+                });
+                
+                cardInner.addEventListener('mouseleave', () => {
+                    updateLayout(-1);
+                });
+
+                // 클릭 시 모달 열기
+                cardInner.addEventListener('click', (e) => {
+                    if (isDragging) return;
+                    e.stopPropagation(); 
+                    openModal(data, card);
+                });
+
+                track.appendChild(card);
+                cardElements.push(card);
+            });
+            
+            // 초기 레이아웃 설정
+            updateLayout(-1);
+        }
+
+        // 레이아웃 업데이트 (위치 및 벌어짐 효과)
+        function updateLayout(focusedIndex) {
+            // 모든 카드를 대상으로 위치 재계산
+            cardElements.forEach((card, index) => {
+                let offset = 0;
+                
+                if (focusedIndex !== -1) {
+                    if (index < focusedIndex) {
+                        offset = -spreadGap; 
+                    } else if (index > focusedIndex) {
+                        offset = spreadGap;
+                    }
+                }
+                
+                const position = index * cardGap + offset;
+                card.style.transform = `translate3d(${position}px, 0, 0)`;
+            });
+        }
+
+        initGallery();
+
+        // ==========================================
+        // 4. 모달 & 애니메이션 로직
+        // ==========================================
+        const modal = document.getElementById('image-modal');
+        const animCard = document.getElementById('animating-card');
+        const modalImg = document.getElementById('modal-image');
+        const modalSideImg = document.getElementById('modal-side-image'); 
+        
+        // 캡션 요소
+        const captionId = document.getElementById('caption-id');
+        const captionTitle = document.getElementById('caption-title');
+
+        function openModal(data, cardElement) {
+            const highResUrl = getHighResUrl(data.originalUrl);
+            
+            // 1. 이미지 소스 설정
+            modalImg.src = data.thumbUrl; 
+            modalSideImg.src = data.sideUrl; 
+            
+            // 캡션 설정
+            captionId.textContent = `${data.id < 10 ? '0'+data.id : data.id}`;
+            captionTitle.textContent = data.title;
+
+            const imgLoader = new Image();
+            imgLoader.src = highResUrl;
+            imgLoader.onload = () => {
+                if (modal.classList.contains('active')) {
+                   modalImg.src = highResUrl;
+                }
+            };
+
+            // 2. 위치 계산
+            const sourceRect = cardElement.querySelector('.card-img').getBoundingClientRect();
+            
+            // 3. 초기 상태 설정
+            animCard.style.transition = 'none';
+            animCard.style.top = `${sourceRect.top}px`;
+            animCard.style.left = `${sourceRect.left}px`;
+            
+            // 처음엔 카드 크기만큼만 (300px)
+            animCard.style.width = `${sourceRect.width}px`; 
+            animCard.style.height = `${sourceRect.height}px`;
+            
+            animCard.style.transform = 'none';
+            animCard.classList.remove('expanded');
+
+            // 4. 모달 표시
+            modal.classList.add('active');
+
+            // 5. 강제 리플로우
+            void animCard.offsetWidth;
+
+            // 6. 확장 애니메이션 실행
+            animCard.style.transition = 'all 2s cubic-bezier(0.19, 1, 0.22, 1)';
+            animCard.classList.add('expanded');
+        }
+
+// 1. 트랜지션 종료 시 처리할 함수
+        function handleModalTransitionEnd(event) {
+            // 'transform' 속성의 트랜지션이 끝났을 때만 처리 (다른 속성 제외)
+            if (event.propertyName !== 'transform') return; 
+
+            // 모달이 실제로 닫힌 상태(active 클래스가 없는 상태)일 때만 이미지 소스 비우기
+            if (!modal.classList.contains('active')) {
+                modalImg.src = '';
+                modalSideImg.src = '';
+                // 트랜지션 끝난 후 바로 모달의 트랜지션을 다시 'none'으로 설정
+                animCard.style.transition = 'none'; 
+            }
+        }
+
+        // 2. 모달 닫기 함수
+        function closeModal() {
+            // 1. 모달 닫는 클래스 제거 (애니메이션 시작)
+            modal.classList.remove('active');
+            animCard.classList.remove('expanded');
+            
+            // 2. [수정] 애니메이션 종료 이벤트 리스너를 한 번만 등록
+            // 트랜지션이 완료되면 handleModalTransitionEnd 함수를 실행합니다.
+            animCard.addEventListener('transitionend', handleModalTransitionEnd, { once: true });
+            
+            // 이전에 있던 setTimeout 로직은 제거됩니다.
+        }
+
+        modal.addEventListener('click', (e) => {
+            closeModal();
+        });
+        
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // ==========================================
+        // 5. 스크롤 인터랙션
+        // ==========================================
+
+        // [수정] 툴팁 스크롤 시 배경 갤러리 이동 방지
+        const tooltip = document.querySelector('.logo-tooltip');
+        
+        // 휠 이벤트 전파 차단
+        tooltip.addEventListener('wheel', (e) => {
+            e.stopPropagation();
+        });
+
+        // 터치 이벤트 전파 차단 (모바일 스크롤 위해)
+        tooltip.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+        });
+        tooltip.addEventListener('touchmove', (e) => {
+            e.stopPropagation();
+        });
+        tooltip.addEventListener('touchend', (e) => {
+            e.stopPropagation();
+        });
+        
+        window.addEventListener('wheel', (e) => {
+            if (modal.classList.contains('active')) return;
+            targetScroll += (e.deltaY + e.deltaX) * 1.5;
+        });
+
+        window.addEventListener('touchstart', (e) => {
+            if (modal.classList.contains('active')) return;
+            isDragging = false; 
+            startCoord = e.touches[0].clientY + e.touches[0].clientX; 
+            startScroll = targetScroll;
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (modal.classList.contains('active')) return;
+            const currentCoord = e.touches[0].clientY + e.touches[0].clientX;
+            const delta = (startCoord - currentCoord) * 1.5; 
+            
+            if (Math.abs(delta) > 5) {
+                isDragging = true; 
+                targetScroll = startScroll + delta;
+            }
+        });
+
+        window.addEventListener('touchend', () => {
+            setTimeout(() => {
+                isDragging = false;
+            }, 100);
+        });
+
+        function animate() {
+            // 현재 보이는 카드 수에 따라 maxScroll 동적 계산
+            // 필터링이 없으므로 cardElements 사용
+            const dynamicMaxScroll = (cardElements.length - 1) * cardGap;
+
+            // 스크롤 한계 제한
+            if (targetScroll < -300) targetScroll = -300;
+            if (targetScroll > dynamicMaxScroll + 300) targetScroll = dynamicMaxScroll + 300;
+
+            // 부드러운 스크롤 (Lerp)
+            currentScroll += (targetScroll - currentScroll) * 0.05;
+
+            // 트랙 이동
+            track.style.transform = `rotateX(60deg) rotateZ(-45deg) translate3d(${-currentScroll}px, 0, 0)`;
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+    </script>
+</body>
+</html>
